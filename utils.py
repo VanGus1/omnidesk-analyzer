@@ -10,6 +10,7 @@ import gspread
 from google.oauth2.service_account import Credentials
 from typing import List, Dict, Optional, Tuple, Any
 from pydantic import BaseModel, Field
+import os
 
 # Модели данных
 class Message(BaseModel):
@@ -35,23 +36,27 @@ class AIRequest(BaseModel):
 	messages: List[Message]
 	ticket: Ticket
 
-# Конфигурация
-AUTH = HTTPBasicAuth('''e.rodnykh@profinansy.net''', '''8e570cb2e035065271f9c0948''')
-openai_key = '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'
-SCOPES = ['https://www.googleapis.com/auth/spreadsheets', 'https://www.googleapis.com/auth/drive']
-SERVICE_ACCOUNT_FILE = r'C:\Users\PC\Documents\Omni\evlampiy-8f8cbd663238.json'
+# Конфигурация из переменных окружения GitHub Actions
+AUTH = HTTPBasicAuth(
+    os.environ['OMNIDESK_USERNAME'],
+    os.environ['OMNIDESK_PASSWORD']
+)
+openai_key = os.environ['OPENAI_API_KEY']
+SCOPES = os.environ['GOOGLE_SCOPES'].split(',')
+
+# Конфигурация Google Service Account
 SERVICE_ACCOUNT_INFO = {
-	"type": "service_account",
-	"project_id": "evlampiy",
-	"private_key_id": "8f8cbd6632381b42bbb2d1ffc3601b0bd13ef400",
-	"private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvAIBADANBgkqhkiG9w0BAQEFAASCBKYwggSiAgEAAoIBAQCqdj/jbikvFLPv\npm1inxg4BAKFb6WHnRJ5nHSCV9WgSWXzAtjeXMRm/B1FNqXer/Xu7HA4yCExWHuT\nYtaywD9+b5CLaFQWyZGkmk8pk9UcZX/5yeZ1X1Mh5JRMJbBeBLe5OpphEIYVDuA8\naJZ5Bkgod00e99m+tYq/QxgUwl6ITAmVcz3uacChpQhBbDhYzLmhh2Ii0qmZrvEG\nks+z5ap9xGON9x4heuhHIfmnI6icwCiNqkLpFzIaEHIRYavdYC22lD13GeuUPhTu\nocf3rRCs7i3Y494JuruoX8NXxkfyZPg65W9isReN66Tj/yXe7TebDxI4jIRWrQRS\n6WfeIzIHAgMBAAECggEAI+sl3DT+vZp1reZaP0E517fUlixn61MILRLwI/UBITTG\nJDYx320Zv3+ZZVe2DN30CwPMQ9K718uGwpA9oE3NM0Wr5gw2R9TyeQZA7whlDAZB\nOK+3/Xx4JnilXQRGDRGeawvzssdKEY7gZio9psPRmaFF4WQlgD99vH6VSO6J/9r4\n6+Re8sA9IGsgG7OtdSexh3arNrMd8ow0JccvYlJh+98NNYXR6YiksByMbax1aXCG\nTFfRvbLEvq6tEtlNXjnNEvT769ggpVqXM101MvSc4A6MTQ0HbNosu1h1zrU/j27L\ntQb2wRt8tUTE1HAzpTTg8bBgAf8F1ilBDPfoHKA93QKBgQC1EAwnUMOoNfiWfGdo\n/H/bphR4fsDvDWmH4kwx46KY9R3PcN2J+K3NEhpb4h9pqWmFpglAtawNpSgnTXXN\nHWpnLTW3XDvu/3DMGT8AcCTLzM3+ClsnKS/9kYg+wWSF6YrmINKy/4Nyyqdu8I3P\ntRzCz2fBpefplN8k6Oakp8mdWwKBgQDxAwdvd0ywZrNlSZjVKoEmaDnZem1GlKXC\nFlHicOEUln0W0G+Fnnqp8dpiBuJR4TNAkpfXC01cusToWMiUPsjOX5VmAnhjt7H6\nIacZk06xehzcoAaDb7ySLoLjqABMhOH73A0feLSmVXBPjEwCQyCe8Lk8v7VNEf9r\ntuzzfmtBxQKBgBLPxQN8r6dVXCt+Z1wQB9SxT6UpPjBYC2PTzijMxsLvjJZV2p6Q\nGLaar+Rl/O+Ea3M4SfPQLD0KsL5MnPWfncN0fgU77voozfZWlSYdgKUv9SL0vn22\nGMdWjHpAq4oCNq0sMdfpFiYiCf1LvuAaqA9Rby0+aHbrQbfa/sOSry7LAoGAOjyd\nI1YUddubJbJu97NZmco9kEuA9DkfBJMYHjtgZ/UlLMoY6JSu1znVpzI6pcZg+A10\nG0Zj3zBSPEKX1RqGszdthkS6in3sx6AyHH/31/LF3pnceQ4a5sfOYOxLhjHl2VIG\n6b/lBvxGMzKXe0R1MXLBj+hTCth6e7Cr+PpnOHECgYAdMP8UCiyZ0ufAzswak1Te\nFxfok7n+TNKmkg0IyKdUuI/w6jTabkI3tdfi3884cP0qxWXBslhleyeSzl0YKTf9\nzedJjeHDkBRd0lC6qxz1e5pcKdiHFWeAVvCKMtzXeYnxGJI+wsiBBIVxiZKdaj1C\njR0KP1dbHMzm/0p+JB3eGA==\n-----END PRIVATE KEY-----\n",
-	"client_email": "evlampiy-kpbot@evlampiy.iam.gserviceaccount.com",
-	"client_id": "115674266877069997599",
-	"auth_uri": "https://accounts.google.com/o/oauth2/auth",
-	"token_uri": "https://oauth2.googleapis.com/token",
-	"auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
-	"client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/evlampiy-kpbot%40evlampiy.iam.gserviceaccount.com",
-	"universe_domain": "googleapis.com"
+    "type": "service_account",
+    "project_id": os.environ['GOOGLE_PROJECT_ID'],
+    "private_key_id": os.environ['GOOGLE_PRIVATE_KEY_ID'],
+    "private_key": os.environ['GOOGLE_PRIVATE_KEY'],
+    "client_email": os.environ['GOOGLE_CLIENT_EMAIL'],
+    "client_id": os.environ['GOOGLE_CLIENT_ID'],
+    "auth_uri": os.environ['GOOGLE_AUTH_URI'],
+    "token_uri": os.environ['GOOGLE_TOKEN_URI'],
+    "auth_provider_x509_cert_url": os.environ['GOOGLE_AUTH_PROVIDER_X509_CERT_URL'],
+    "client_x509_cert_url": os.environ['GOOGLE_CLIENT_X509_CERT_URL'],
+    "universe_domain": "googleapis.com"
 }
 
 async def make_get_request(url: str, **kwargs) -> requests.Response:
@@ -486,7 +491,6 @@ def make_request_ai(data):
 
 
 def init_google_sheets():
-	# creds = Credentials.from_service_account_file(SERVICE_ACCOUNT_FILE, scopes=SCOPES)
 	creds = Credentials.from_service_account_info(SERVICE_ACCOUNT_INFO, scopes=SCOPES)
 	client = gspread.authorize(creds)
 	return client

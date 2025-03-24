@@ -7,6 +7,21 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    env:
+      OMNIDESK_USERNAME: ${{ secrets.OMNIDESK_USERNAME }}
+      OMNIDESK_PASSWORD: ${{ secrets.OMNIDESK_PASSWORD }}
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      GOOGLE_SERVICE_ACCOUNT_FILE: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_FILE }}
+      GOOGLE_SCOPES: ${{ secrets.GOOGLE_SCOPES }}
+      GOOGLE_PROJECT_ID: ${{ secrets.GOOGLE_PROJECT_ID }}
+      GOOGLE_PRIVATE_KEY_ID: ${{ secrets.GOOGLE_PRIVATE_KEY_ID }}
+      GOOGLE_PRIVATE_KEY: ${{ secrets.GOOGLE_PRIVATE_KEY }}
+      GOOGLE_CLIENT_EMAIL: ${{ secrets.GOOGLE_CLIENT_EMAIL }}
+      GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
+      GOOGLE_AUTH_URI: ${{ secrets.GOOGLE_AUTH_URI }}
+      GOOGLE_TOKEN_URI: ${{ secrets.GOOGLE_TOKEN_URI }}
+      GOOGLE_AUTH_PROVIDER_X509_CERT_URL: ${{ secrets.GOOGLE_AUTH_PROVIDER_X509_CERT_URL }}
+      GOOGLE_CLIENT_X509_CERT_URL: ${{ secrets.GOOGLE_CLIENT_X509_CERT_URL }}
     steps:
     - uses: actions/checkout@v3
     
@@ -16,6 +31,21 @@ jobs:
         host: ${{ secrets.SERVER_HOST }}
         username: ${{ secrets.SERVER_USERNAME }}
         password: ${{ secrets.SERVER_PASSWORD }}
+        envs: |
+          OMNIDESK_USERNAME
+          OMNIDESK_PASSWORD
+          OPENAI_API_KEY
+          GOOGLE_SERVICE_ACCOUNT_FILE
+          GOOGLE_SCOPES
+          GOOGLE_PROJECT_ID
+          GOOGLE_PRIVATE_KEY_ID
+          GOOGLE_PRIVATE_KEY
+          GOOGLE_CLIENT_EMAIL
+          GOOGLE_CLIENT_ID
+          GOOGLE_AUTH_URI
+          GOOGLE_TOKEN_URI
+          GOOGLE_AUTH_PROVIDER_X509_CERT_URL
+          GOOGLE_CLIENT_X509_CERT_URL
         script: |
           cd /opt/omnidesk-analyzer
           git pull origin main
