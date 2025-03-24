@@ -1,13 +1,12 @@
 from utils import get_tickets, get_messages, clean_message, role_count, set_assignee, set_group, get_earliest_message, make_request_ai, get_first_response, create_tickets_table, init_google_sheets, update_table_with_ai_results
 
 def main():
-
 	client = init_google_sheets()
 
 	tickets = get_tickets(limit = 10, status = 'closed')
 	
 	for ticket in tickets:
-		print(f'{ticket['case_id']}')
+		print(f"{ticket['case_id']}")
 		try:
 			messages = get_messages(ticket['case_id'])
 
@@ -22,7 +21,7 @@ def main():
 			ticket['earliest_message'] = get_earliest_message(messages)
 			ticket['first_response_score'] = get_first_response(ticket['created_at'], ticket['earliest_message'])
 		except Exception as e:
-			print(f'{e} - {ticket['case_id']}')
+			print(f"{e} - {ticket['case_id']}")
 
 	set_assignee(tickets)
 	set_group(tickets)
