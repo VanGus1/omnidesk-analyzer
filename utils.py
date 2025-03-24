@@ -112,36 +112,53 @@ async def get_tickets(**kwargs) -> List[Ticket]:
 	while True:
 		params['page'] = page
 		url = f"{base_url}?{urllib.parse.urlencode(params)}"
+		print(f"Fetching tickets from URL: {url}")  # Отладочный вывод
 
 		try:
 			cases = await make_get_request(url, auth=AUTH)
+			print(f"Received response: {cases}")  # Отладочный вывод
+			
+			if not isinstance(cases, dict):
+				raise ValueError(f"Unexpected response format: {type(cases)}")
+				
 			results = []
-
 			for c in cases:
 				if c == 'total_count':
 					continue
-
+					
+				if not isinstance(cases[c], dict) or 'case' not in cases[c]:
+					print(f"Skipping invalid case format: {cases[c]}")  # Отладочный вывод
+					continue
+					
 				case = cases[c]["case"]
-				results.append(Ticket(
-					link=f'https://profinansy.omnidesk.ru/staff/cases/record/{case["case_number"]}',
-					case_id=case["case_id"],
-					case_number=case["case_number"],
-					group_id=case["group_id"],
-					user_id=case["user_id"],
-					staff_id=case["staff_id"],
-					rating=case["rating"],
-					created_at=case["created_at"],
-					status=case['status'],
-				))
+				try:
+					ticket = Ticket(
+						link=f'https://profinansy.omnidesk.ru/staff/cases/record/{case["case_number"]}',
+						case_id=case["case_id"],
+						case_number=case["case_number"],
+						group_id=case["group_id"],
+						user_id=case["user_id"],
+						staff_id=case["staff_id"],
+						rating=case.get("rating"),  # Используем .get() для опциональных полей
+						created_at=case["created_at"],
+						status=case['status'],
+					)
+					results.append(ticket)
+				except Exception as e:
+					print(f"Error creating ticket from case {case.get('case_id')}: {str(e)}")  # Отладочный вывод
+					continue
 
 			all_results.extend(results)
 			total_fetched += len(results)
+			print(f"Processed {len(results)} tickets on page {page}")  # Отладочный вывод
 
 			if len(results) < 100 or (limit is not None and total_fetched >= limit):
 				break
 			else:
 				page += 1
+				
 		except Exception as e:
+			print(f"Error in get_tickets: {str(e)}")  # Отладочный вывод
 			raise HTTPException(
 				status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
 				detail=f"Ошибка при получении обращений: {str(e)}"
