@@ -46,17 +46,18 @@ class AnalyzeRequest(BaseModel):
 async def root():
 	return {"message": "OmniDesk Analyzer API is running"}
 
-@app.get("/tickets", response_model=List[TicketResponse])
+@app.get("/tickets")
 async def get_tickets_list(limit: int = 10, status: str = 'closed'):
 	"""
-	Получение списка обращений с возможностью фильтрации
+	Получение списка тикетов
 	"""
 	try:
-		tickets = get_tickets(limit=limit, status=status)
-		set_assignee(tickets)
-		set_group(tickets)
+		logger.info(f"Fetching tickets with limit={limit} and status={status}")
+		tickets = await get_tickets(limit=limit, status=status)
+		logger.info(f"Found {len(tickets)} tickets")
 		return tickets
 	except Exception as e:
+		logger.error(f"Error fetching tickets: {str(e)}", exc_info=True)
 		raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/tickets/{case_id}/messages")
