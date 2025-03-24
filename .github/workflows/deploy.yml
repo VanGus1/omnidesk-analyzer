@@ -51,8 +51,37 @@ jobs:
           git pull origin main
           source venv/bin/activate
           pip install -r requirements.txt
-          sudo systemctl restart omnidesk-analyzer
+          
+          # Обновление файла с переменными окружения
+          echo "Updating environment variables file..."
+          cat > /etc/systemd/system/omnidesk-analyzer.env << EOL
+          OMNIDESK_USERNAME=$OMNIDESK_USERNAME
+          OMNIDESK_PASSWORD=$OMNIDESK_PASSWORD
+          OPENAI_API_KEY=$OPENAI_API_KEY
+          GOOGLE_SERVICE_ACCOUNT_FILE=$GOOGLE_SERVICE_ACCOUNT_FILE
+          GOOGLE_SCOPES=$GOOGLE_SCOPES
+          GOOGLE_PROJECT_ID=$GOOGLE_PROJECT_ID
+          GOOGLE_PRIVATE_KEY_ID=$GOOGLE_PRIVATE_KEY_ID
+          GOOGLE_PRIVATE_KEY=$GOOGLE_PRIVATE_KEY
+          GOOGLE_CLIENT_EMAIL=$GOOGLE_CLIENT_EMAIL
+          GOOGLE_CLIENT_ID=$GOOGLE_CLIENT_ID
+          GOOGLE_AUTH_URI=$GOOGLE_AUTH_URI
+          GOOGLE_TOKEN_URI=$GOOGLE_TOKEN_URI
+          GOOGLE_AUTH_PROVIDER_X509_CERT_URL=$GOOGLE_AUTH_PROVIDER_X509_CERT_URL
+          GOOGLE_CLIENT_X509_CERT_URL=$GOOGLE_CLIENT_X509_CERT_URL
+          EOL
+          
+          # Установка прав доступа
+          chmod 600 /etc/systemd/system/omnidesk-analyzer.env
+          
+          # Перезагрузка systemd и перезапуск сервиса
+          systemctl daemon-reload
+          systemctl restart omnidesk-analyzer
+          
           # Проверка статуса сервиса
-          sudo systemctl status omnidesk-analyzer
+          echo "Service status:"
+          systemctl status omnidesk-analyzer
+          
           # Проверка логов
-          sudo journalctl -u omnidesk-analyzer -n 50 
+          echo "Service logs:"
+          journalctl -u omnidesk-analyzer -n 50 
