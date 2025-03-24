@@ -84,11 +84,19 @@ async def make_get_request(url: str, **kwargs) -> dict:
 		HTTPException: Если запрос не удался
 	"""
 	try:
+		# Создаем заголовки для аутентификации
+		headers = {
+			'Authorization': f'Basic {AUTH.encode().decode()}',
+			'Content-Type': 'application/json'
+		}
+		
 		async with aiohttp.ClientSession() as session:
-			async with session.get(url, **kwargs) as response:
+			async with session.get(url, headers=headers) as response:
 				if response.status != 200:
 					error_text = await response.text()
 					print(f"Error response: {error_text}")  # Отладочный вывод
+					print(f"Request URL: {url}")  # Отладочный вывод
+					print(f"Request headers: {headers}")  # Отладочный вывод
 					raise HTTPException(
 						status_code=response.status,
 						detail=f"Ошибка при выполнении запроса: {error_text}"
