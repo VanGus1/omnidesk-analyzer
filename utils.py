@@ -12,6 +12,15 @@ from google.oauth2.service_account import Credentials
 from typing import List, Dict, Optional, Tuple, Any
 from pydantic import BaseModel, Field
 import os
+from dotenv import load_dotenv
+
+# Загружаем переменные окружения
+load_dotenv()
+
+# Отладочный вывод для проверки переменных окружения
+print("Checking environment variables:")
+print(f"OMNIDESK_USERNAME: {'*' * len(os.getenv('OMNIDESK_USERNAME', ''))}")
+print(f"OMNIDESK_PASSWORD: {'*' * len(os.getenv('OMNIDESK_PASSWORD', ''))}")
 
 # Модели данных
 class Message(BaseModel):
