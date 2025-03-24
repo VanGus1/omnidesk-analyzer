@@ -1,6 +1,6 @@
 import requests
 import aiohttp
-from requests.auth import HTTPBasicAuth
+from aiohttp import BasicAuth
 from fastapi import HTTPException, status
 import urllib.parse
 import re
@@ -38,7 +38,7 @@ class AIRequest(BaseModel):
 	ticket: Ticket
 
 # Конфигурация из переменных окружения GitHub Actions
-AUTH = HTTPBasicAuth(
+AUTH = BasicAuth(
     os.environ['OMNIDESK_USERNAME'],
     os.environ['OMNIDESK_PASSWORD']
 )
@@ -78,12 +78,15 @@ async def make_get_request(url: str, **kwargs) -> dict:
 		async with aiohttp.ClientSession() as session:
 			async with session.get(url, **kwargs) as response:
 				if response.status != 200:
+					error_text = await response.text()
+					print(f"Error response: {error_text}")  # Отладочный вывод
 					raise HTTPException(
 						status_code=response.status,
-						detail=f"Ошибка при выполнении запроса: {await response.text()}"
+						detail=f"Ошибка при выполнении запроса: {error_text}"
 					)
 				return await response.json()
 	except Exception as e:
+		print(f"Request error: {str(e)}")  # Отладочный вывод
 		raise HTTPException(
 			status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
 			detail=f"Ошибка при выполнении запроса: {str(e)}"
