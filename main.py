@@ -1,5 +1,10 @@
 import os
 from dotenv import load_dotenv
+import logging
+
+# Настройка логирования
+logging.basicConfig(level=logging.DEBUG)
+logger = logging.getLogger(__name__)
 
 # Загрузка переменных окружения
 load_dotenv('/etc/systemd/system/omnidesk-analyzer.env')
@@ -29,6 +34,11 @@ class TicketResponse(BaseModel):
 	user_count: Optional[int] = None
 	earliest_message: Optional[str] = None
 	first_response_score: Optional[float] = None
+	assignee: Optional[str] = None
+	group: Optional[str] = None
+
+class AnalyzeRequest(BaseModel):
+	ticket_ids: List[int]
 	assignee: Optional[str] = None
 	group: Optional[str] = None
 
@@ -64,43 +74,107 @@ async def get_ticket_messages(case_id: int):
 		raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/analyze")
-async def analyze_tickets(limit: int = 10, status: str = 'closed'):
-	"""
-	Полный анализ обращений с записью в Google Sheets
-	"""
+async def analyze_tickets(request: AnalyzeRequest):
 	try:
-		client = init_google_sheets()
-		tickets = get_tickets(limit=limit, status=status)
+		logger.info(f"Starting analysis for tickets: {request.ticket_ids}")
+		logger.info(f"Additional parameters - assignee: {request.assignee}, group: {request.group}")
 		
+		# Получаем тикеты
+		logger.debug("Fetching tickets...")
+		tickets = get_tickets(request.ticket_ids)
+		logger.info(f"Found {len(tickets)} tickets")
+		
+		# Получаем сообщения для каждого тикета
+		logger.debug("Fetching messages for tickets...")
+		messages = {}
 		for ticket in tickets:
 			try:
-				messages = get_messages(ticket['case_id'])
-				for message in messages:
-					cleaned_content = clean_message(message['content'], message['content_type'])
-					message['content'] = cleaned_content
-					
-				ticket['messages'] = messages
-				(staff_count, user_count) = role_count(messages)
-				ticket['staff_count'] = staff_count
-				ticket['user_count'] = user_count
-				ticket['earliest_message'] = get_earliest_message(messages)
-				ticket['first_response_score'] = get_first_response(ticket['created_at'], ticket['earliest_message'])
+				logger.debug(f"Fetching messages for ticket {ticket['id']}")
+				messages[ticket['id']] = get_messages(ticket['id'])
+				logger.info(f"Found {len(messages[ticket['id']])} messages for ticket {ticket['id']}")
 			except Exception as e:
-				print(f"{e} - {ticket['case_id']}")
-
-		set_assignee(tickets)
-		set_group(tickets)
-
-		spreadsheet, sheet, headers = create_tickets_table(client, tickets)
-
-		for i, ticket in enumerate(tickets, start=2):
-			data = ticket['messages']
-			ai_result = make_request_ai(data)
-			ticket['ai_result'] = ai_result
-			update_table_with_ai_results(sheet, ticket, headers, i)
-
-		return {"message": f"Successfully analyzed {len(tickets)} tickets"}
+				logger.error(f"Error fetching messages for ticket {ticket['id']}: {str(e)}")
+				raise HTTPException(status_code=500, detail=f"Error fetching messages for ticket {ticket['id']}: {str(e)}")
+		
+		# Очищаем сообщения
+		logger.debug("Cleaning messages...")
+		cleaned_messages = {}
+		for ticket_id, msgs in messages.items():
+			cleaned_messages[ticket_id] = [clean_message(msg) for msg in msgs]
+		
+		# Подсчитываем роли
+		logger.debug("Counting roles...")
+		roles = {}
+		for ticket_id, msgs in cleaned_messages.items():
+			roles[ticket_id] = role_count(msgs)
+		
+		# Получаем первое сообщение
+		logger.debug("Getting earliest messages...")
+		first_messages = {}
+		for ticket_id, msgs in cleaned_messages.items():
+			first_messages[ticket_id] = get_earliest_message(msgs)
+		
+		# Получаем ответы от AI
+		logger.debug("Getting AI responses...")
+		ai_responses = {}
+		for ticket_id, msg in first_messages.items():
+			try:
+				logger.debug(f"Getting AI response for ticket {ticket_id}")
+				ai_responses[ticket_id] = make_request_ai(msg)
+				logger.info(f"Got AI response for ticket {ticket_id}")
+			except Exception as e:
+				logger.error(f"Error getting AI response for ticket {ticket_id}: {str(e)}")
+				raise HTTPException(status_code=500, detail=f"Error getting AI response for ticket {ticket_id}: {str(e)}")
+		
+		# Получаем время первого ответа
+		logger.debug("Getting first response times...")
+		first_response_times = {}
+		for ticket_id, msgs in cleaned_messages.items():
+			first_response_times[ticket_id] = get_first_response(msgs)
+		
+		# Создаем таблицу
+		logger.debug("Creating tickets table...")
+		try:
+			table = create_tickets_table(tickets, cleaned_messages, roles, ai_responses, first_response_times)
+			logger.info("Table created successfully")
+		except Exception as e:
+			logger.error(f"Error creating table: {str(e)}")
+			raise HTTPException(status_code=500, detail=f"Error creating table: {str(e)}")
+		
+		# Инициализируем Google Sheets
+		logger.debug("Initializing Google Sheets...")
+		try:
+			sheet = init_google_sheets()
+			logger.info("Google Sheets initialized successfully")
+		except Exception as e:
+			logger.error(f"Error initializing Google Sheets: {str(e)}")
+			raise HTTPException(status_code=500, detail=f"Error initializing Google Sheets: {str(e)}")
+		
+		# Обновляем таблицу
+		logger.debug("Updating table with AI results...")
+		try:
+			update_table_with_ai_results(sheet, table)
+			logger.info("Table updated successfully")
+		except Exception as e:
+			logger.error(f"Error updating table: {str(e)}")
+			raise HTTPException(status_code=500, detail=f"Error updating table: {str(e)}")
+		
+		# Устанавливаем assignee и group если указаны
+		if request.assignee:
+			logger.debug(f"Setting assignee to {request.assignee}...")
+			for ticket_id in request.ticket_ids:
+				set_assignee(ticket_id, request.assignee)
+		
+		if request.group:
+			logger.debug(f"Setting group to {request.group}...")
+			for ticket_id in request.ticket_ids:
+				set_group(ticket_id, request.group)
+		
+		logger.info("Analysis completed successfully")
+		return {"status": "success", "message": "Analysis completed successfully"}
+		
 	except Exception as e:
+		logger.error(f"Error during analysis: {str(e)}", exc_info=True)
 		raise HTTPException(status_code=500, detail=str(e))
 
 if __name__ == '__main__':
