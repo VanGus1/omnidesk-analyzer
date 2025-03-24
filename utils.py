@@ -1,4 +1,5 @@
 import requests
+import aiohttp
 from requests.auth import HTTPBasicAuth
 from fastapi import HTTPException, status
 import urllib.parse
@@ -59,25 +60,30 @@ SERVICE_ACCOUNT_INFO = {
     "universe_domain": "googleapis.com"
 }
 
-async def make_get_request(url: str, **kwargs) -> requests.Response:
+async def make_get_request(url: str, **kwargs) -> dict:
 	"""
-	Выполняет GET-запрос на указанный URL с использованием переданных параметров.
+	Выполняет асинхронный GET-запрос на указанный URL с использованием переданных параметров.
 
 	Args:
 		url: URL для выполнения GET-запроса
 		**kwargs: Дополнительные параметры запроса
 
 	Returns:
-		Response: Ответ сервера
+		dict: Ответ сервера в формате JSON
 
 	Raises:
 		HTTPException: Если запрос не удался
 	"""
 	try:
-		response = requests.get(url, **kwargs)
-		response.raise_for_status()
-		return response
-	except requests.exceptions.RequestException as e:
+		async with aiohttp.ClientSession() as session:
+			async with session.get(url, **kwargs) as response:
+				if response.status != 200:
+					raise HTTPException(
+						status_code=response.status,
+						detail=f"Ошибка при выполнении запроса: {await response.text()}"
+					)
+				return await response.json()
+	except Exception as e:
 		raise HTTPException(
 			status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
 			detail=f"Ошибка при выполнении запроса: {str(e)}"
@@ -108,8 +114,7 @@ async def get_tickets(**kwargs) -> List[Ticket]:
 		url = f"{base_url}?{urllib.parse.urlencode(params)}"
 
 		try:
-			response = await make_get_request(url, auth=AUTH)
-			cases = response.json()
+			cases = await make_get_request(url, auth=AUTH)
 			results = []
 
 			for c in cases:
