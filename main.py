@@ -1,3 +1,14 @@
+import os
+from dotenv import load_dotenv
+
+# Загрузка переменных окружения
+load_dotenv('/etc/systemd/system/omnidesk-analyzer.env')
+
+# Отладочный вывод
+print("Environment variables:")
+for key in ['OMNIDESK_USERNAME', 'OMNIDESK_PASSWORD', 'OPENAI_API_KEY', 'GOOGLE_SERVICE_ACCOUNT_FILE']:
+	print(f"{key}: {'*' * len(os.getenv(key, '')) if os.getenv(key) else 'Not set'}")
+
 from fastapi import FastAPI, HTTPException
 from typing import List, Optional
 from utils import get_tickets, get_messages, clean_message, role_count, set_assignee, set_group, get_earliest_message, make_request_ai, get_first_response, create_tickets_table, init_google_sheets, update_table_with_ai_results
