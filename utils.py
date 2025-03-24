@@ -13,6 +13,7 @@ from typing import List, Dict, Optional, Tuple, Any
 from pydantic import BaseModel, Field
 import os
 from dotenv import load_dotenv
+import base64
 
 # Загружаем переменные окружения
 load_dotenv()
@@ -85,10 +86,16 @@ async def make_get_request(url: str, **kwargs) -> dict:
 	"""
 	try:
 		# Создаем заголовки для аутентификации
+		auth_string = f"{os.environ['OMNIDESK_USERNAME']}:{os.environ['OMNIDESK_PASSWORD']}"
+		auth_bytes = auth_string.encode('utf-8')
+		auth_b64 = base64.b64encode(auth_bytes).decode('utf-8')
+		
 		headers = {
-			'Authorization': f'Basic {AUTH.encode().decode()}',
+			'Authorization': f'Basic {auth_b64}',
 			'Content-Type': 'application/json'
 		}
+		
+		print(f"Using auth header: Basic {auth_b64[:10]}...")  # Отладочный вывод (показываем только начало)
 		
 		async with aiohttp.ClientSession() as session:
 			async with session.get(url, headers=headers) as response:
@@ -96,7 +103,7 @@ async def make_get_request(url: str, **kwargs) -> dict:
 					error_text = await response.text()
 					print(f"Error response: {error_text}")  # Отладочный вывод
 					print(f"Request URL: {url}")  # Отладочный вывод
-					print(f"Request headers: {headers}")  # Отладочный вывод
+					print(f"Response status: {response.status}")  # Отладочный вывод
 					raise HTTPException(
 						status_code=response.status,
 						detail=f"Ошибка при выполнении запроса: {error_text}"
