@@ -52,36 +52,30 @@ jobs:
           source venv/bin/activate
           pip install -r requirements.txt
           
-          # Обновление файла с переменными окружения
-          echo "Updating environment variables file..."
-          cat > /etc/systemd/system/omnidesk-analyzer.env << EOL
-          OMNIDESK_USERNAME=$OMNIDESK_USERNAME
-          OMNIDESK_PASSWORD=$OMNIDESK_PASSWORD
-          OPENAI_API_KEY=$OPENAI_API_KEY
-          GOOGLE_SERVICE_ACCOUNT_FILE=$GOOGLE_SERVICE_ACCOUNT_FILE
-          GOOGLE_SCOPES=$GOOGLE_SCOPES
-          GOOGLE_PROJECT_ID=$GOOGLE_PROJECT_ID
-          GOOGLE_PRIVATE_KEY_ID=$GOOGLE_PRIVATE_KEY_ID
-          GOOGLE_PRIVATE_KEY=$GOOGLE_PRIVATE_KEY
-          GOOGLE_CLIENT_EMAIL=$GOOGLE_CLIENT_EMAIL
-          GOOGLE_CLIENT_ID=$GOOGLE_CLIENT_ID
-          GOOGLE_AUTH_URI=$GOOGLE_AUTH_URI
-          GOOGLE_TOKEN_URI=$GOOGLE_TOKEN_URI
-          GOOGLE_AUTH_PROVIDER_X509_CERT_URL=$GOOGLE_AUTH_PROVIDER_X509_CERT_URL
-          GOOGLE_CLIENT_X509_CERT_URL=$GOOGLE_CLIENT_X509_CERT_URL
+          # Создаем .env файл из секретов
+          cat > .env << EOL
+          OMNIDESK_USERNAME=${{ secrets.OMNIDESK_USERNAME }}
+          OMNIDESK_PASSWORD=${{ secrets.OMNIDESK_PASSWORD }}
+          OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}
+          GOOGLE_SCOPES=${{ secrets.GOOGLE_SCOPES }}
+          GOOGLE_SERVICE_ACCOUNT_FILE=${{ secrets.GOOGLE_SERVICE_ACCOUNT_FILE }}
+          GOOGLE_PROJECT_ID=${{ secrets.GOOGLE_PROJECT_ID }}
+          GOOGLE_PRIVATE_KEY_ID=${{ secrets.GOOGLE_PRIVATE_KEY_ID }}
+          GOOGLE_PRIVATE_KEY=${{ secrets.GOOGLE_PRIVATE_KEY }}
+          GOOGLE_CLIENT_EMAIL=${{ secrets.GOOGLE_CLIENT_EMAIL }}
+          GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }}
+          GOOGLE_AUTH_URI=${{ secrets.GOOGLE_AUTH_URI }}
+          GOOGLE_TOKEN_URI=${{ secrets.GOOGLE_TOKEN_URI }}
+          GOOGLE_AUTH_PROVIDER_X509_CERT_URL=${{ secrets.GOOGLE_AUTH_PROVIDER_X509_CERT_URL }}
+          GOOGLE_CLIENT_X509_CERT_URL=${{ secrets.GOOGLE_CLIENT_X509_CERT_URL }}
           EOL
           
-          # Установка прав доступа
-          chmod 600 /etc/systemd/system/omnidesk-analyzer.env
+          # Устанавливаем правильные права доступа
+          chown omnidesk:omnidesk .env
+          chmod 600 .env
           
-          # Перезагрузка systemd и перезапуск сервиса
-          systemctl daemon-reload
-          systemctl restart omnidesk-analyzer
-          
+          sudo systemctl restart omnidesk-analyzer
           # Проверка статуса сервиса
-          echo "Service status:"
-          systemctl status omnidesk-analyzer
-          
+          sudo systemctl status omnidesk-analyzer
           # Проверка логов
-          echo "Service logs:"
-          journalctl -u omnidesk-analyzer -n 50 
+          sudo journalctl -u omnidesk-analyzer -n 50 
