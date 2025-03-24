@@ -46,7 +46,7 @@ class AnalyzeRequest(BaseModel):
 async def root():
 	return {"message": "OmniDesk Analyzer API is running"}
 
-@app.get("/tickets")
+@app.get("/tickets", response_model=List[TicketResponse])
 async def get_tickets_list(limit: int = 10, status: str = 'closed'):
 	"""
 	Получение списка тикетов
@@ -55,10 +55,37 @@ async def get_tickets_list(limit: int = 10, status: str = 'closed'):
 		logger.info(f"Fetching tickets with limit={limit} and status={status}")
 		tickets = await get_tickets(limit=limit, status=status)
 		logger.info(f"Found {len(tickets)} tickets")
-		return tickets
+		
+		# Преобразуем тикеты в формат ответа
+		response_tickets = []
+		for ticket in tickets:
+			try:
+				response_ticket = TicketResponse(
+					case_id=ticket['case_id'],
+					case_number=ticket['case_number'],
+					status=ticket['status'],
+					created_at=ticket['created_at'],
+					staff_count=ticket.get('staff_count'),
+					user_count=ticket.get('user_count'),
+					earliest_message=ticket.get('earliest_message'),
+					first_response_score=ticket.get('first_response_score'),
+					assignee=ticket.get('assignee'),
+					group=ticket.get('group')
+				)
+				response_tickets.append(response_ticket)
+			except Exception as e:
+				logger.error(f"Error processing ticket {ticket.get('case_id')}: {str(e)}")
+				continue
+		
+		logger.info(f"Successfully processed {len(response_tickets)} tickets")
+		return response_tickets
+		
 	except Exception as e:
 		logger.error(f"Error fetching tickets: {str(e)}", exc_info=True)
-		raise HTTPException(status_code=500, detail=str(e))
+		raise HTTPException(
+			status_code=500,
+			detail=f"Error fetching tickets: {str(e)}"
+		)
 
 @app.get("/tickets/{case_id}/messages")
 async def get_ticket_messages(case_id: int):
