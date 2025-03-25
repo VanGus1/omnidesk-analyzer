@@ -81,13 +81,18 @@ async def make_get_request(url: str, **kwargs) -> dict:
 		HTTPException: Если запрос не удался
 	"""
 	try:
-		auth = BasicAuth(
-			login=os.environ['OMNIDESK_USERNAME'],
-			password=os.environ['OMNIDESK_PASSWORD']
-		)
+		# Создаем заголовки для аутентификации
+		auth_string = f"{os.environ['OMNIDESK_USERNAME']}:{os.environ['OMNIDESK_PASSWORD']}"
+		auth_bytes = auth_string.encode('ascii')
+		auth_b64 = base64.b64encode(auth_bytes).decode('ascii')
+		
+		headers = {
+			'Authorization': f'Basic {auth_b64}',
+			'Content-Type': 'application/json'
+		}
 		
 		async with aiohttp.ClientSession() as session:
-			async with session.get(url, auth=auth) as response:
+			async with session.get(url, headers=headers) as response:
 				if response.status != 200:
 					error_text = await response.text()
 					print(f"Error response: {error_text}")
