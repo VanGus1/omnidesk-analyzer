@@ -9,13 +9,6 @@ logger = logging.getLogger(__name__)
 # Загрузка переменных окружения
 load_dotenv('/etc/systemd/system/omnidesk-analyzer.env')
 
-# Проверяем наличие необходимых переменных окружения
-required_env_vars = ['OMNIDESK_USERNAME', 'OMNIDESK_PASSWORD', 'OPENAI_API_KEY']
-missing_vars = [var for var in required_env_vars if not os.getenv(var)]
-if missing_vars:
-	logger.error(f"Missing required environment variables: {', '.join(missing_vars)}")
-	raise RuntimeError(f"Missing required environment variables: {', '.join(missing_vars)}")
-
 # Отладочный вывод
 print("Environment variables:")
 for key in ['OMNIDESK_USERNAME', 'OMNIDESK_PASSWORD', 'OPENAI_API_KEY', 'GOOGLE_SERVICE_ACCOUNT_FILE']:

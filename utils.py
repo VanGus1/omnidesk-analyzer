@@ -20,8 +20,8 @@ load_dotenv()
 
 # Отладочный вывод для проверки переменных окружения
 print("Environment variables:")
-print(f"OMNIDESK_USERNAME: {'*' * len(os.getenv('OMNIDESK_USERNAME', ''))}")
-print(f"OMNIDESK_PASSWORD: {'*' * len(os.getenv('OMNIDESK_PASSWORD', ''))}")
+print(f"OMNIDESK_USERNAME: {'*' * len(os.environ['OMNIDESK_USERNAME'])}")
+print(f"OMNIDESK_PASSWORD: {'*' * len(os.environ['OMNIDESK_PASSWORD'])}")
 
 # Модели данных
 class Message(BaseModel):
@@ -82,12 +82,8 @@ async def make_get_request(url: str, **kwargs) -> dict:
 	"""
 	try:
 		# Создаем заголовки для аутентификации
-		auth_string = f"{os.environ['OMNIDESK_USERNAME']}:{os.environ['OMNIDESK_PASSWORD']}"
-		auth_bytes = auth_string.encode('ascii')
-		auth_b64 = base64.b64encode(auth_bytes).decode('ascii')
-		
 		headers = {
-			'Authorization': f'Basic {auth_b64}',
+			'Authorization': f"Basic {os.environ['OMNIDESK_USERNAME']}:{os.environ['OMNIDESK_PASSWORD']}",
 			'Content-Type': 'application/json'
 		}
 		
@@ -100,14 +96,14 @@ async def make_get_request(url: str, **kwargs) -> dict:
 					print(f"Response status: {response.status}")
 					raise HTTPException(
 						status_code=response.status,
-						detail=f"Ошибка при выполнении запроса: {error_text}"
+						detail=f"API request failed: {error_text}"
 					)
 				return await response.json()
 	except Exception as e:
 		print(f"Request error: {str(e)}")
 		raise HTTPException(
 			status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-			detail=f"Ошибка при выполнении запроса: {str(e)}"
+			detail=f"Failed to make request: {str(e)}"
 		)
 
 async def get_tickets(**kwargs) -> List[Ticket]:
