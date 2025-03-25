@@ -47,28 +47,39 @@ jobs:
           GOOGLE_AUTH_PROVIDER_X509_CERT_URL
           GOOGLE_CLIENT_X509_CERT_URL
         script: |
-          cd /opt/omnidesk-analyzer
-          
-          # Проверяем текущую конфигурацию git
-          echo "Current git configuration:"
-          git config --list
-          
-          # Проверяем текущий remote
-          echo "Current git remote:"
-          git remote -v
-          
-          # Проверяем текущую ветку и статус
-          echo "Current branch and status:"
-          git branch -a
-          git status
-          
-          # Проверяем права доступа
-          echo "Current permissions:"
-          ls -la
-          
           # Останавливаем сервис
           echo "Stopping service..."
           sudo systemctl stop omnidesk-analyzer
+          
+          # Сохраняем .env файл
+          echo "Backing up .env..."
+          if [ -f /opt/omnidesk-analyzer/.env ]; then
+            sudo cp /opt/omnidesk-analyzer/.env /tmp/omnidesk.env.backup
+          fi
+          
+          # Сохраняем виртуальное окружение
+          echo "Backing up venv..."
+          if [ -d /opt/omnidesk-analyzer/venv ]; then
+            sudo cp -r /opt/omnidesk-analyzer/venv /tmp/omnidesk.venv.backup
+          fi
+          
+          # Удаляем старую директорию
+          echo "Removing old directory..."
+          sudo rm -rf /opt/omnidesk-analyzer
+          
+          # Клонируем репозиторий заново
+          echo "Cloning repository..."
+          sudo git clone https://github.com/VanGus1/omnidesk-analyzer.git /opt/omnidesk-analyzer
+          
+          # Восстанавливаем виртуальное окружение
+          echo "Restoring venv..."
+          if [ -d /tmp/omnidesk.venv.backup ]; then
+            sudo cp -r /tmp/omnidesk.venv.backup /opt/omnidesk-analyzer/venv
+          else
+            echo "Creating new venv..."
+            cd /opt/omnidesk-analyzer
+            python3 -m venv venv
+          fi
           
           # Обновляем конфигурацию сервиса
           echo "Updating service configuration..."
@@ -94,23 +105,11 @@ jobs:
           echo "Reloading systemd configuration..."
           sudo systemctl daemon-reload
           
-          # Сохраняем текущий хэш коммита
+          cd /opt/omnidesk-analyzer
+          
+          # Проверяем текущий коммит
           echo "Current commit hash:"
           git rev-parse HEAD
-          
-          # Принудительно сбрасываем все локальные изменения
-          echo "Resetting local changes..."
-          git fetch origin main
-          git reset --hard origin/main
-          git clean -fd
-          
-          # Проверяем новый хэш коммита
-          echo "New commit hash:"
-          git rev-parse HEAD
-          
-          # Проверяем статус git после обновления
-          echo "Git status after update:"
-          git status
           
           # Обновляем зависимости
           echo "Updating dependencies..."
