@@ -81,7 +81,6 @@ async def make_get_request(url: str, **kwargs) -> dict:
 		HTTPException: Если запрос не удался
 	"""
 	try:
-		# Создаем объект BasicAuth для каждого запроса
 		auth = BasicAuth(
 			login=os.environ['OMNIDESK_USERNAME'],
 			password=os.environ['OMNIDESK_PASSWORD']
@@ -91,16 +90,16 @@ async def make_get_request(url: str, **kwargs) -> dict:
 			async with session.get(url, auth=auth) as response:
 				if response.status != 200:
 					error_text = await response.text()
-					print(f"Error response: {error_text}")  # Отладочный вывод
-					print(f"Request URL: {url}")  # Отладочный вывод
-					print(f"Response status: {response.status}")  # Отладочный вывод
+					print(f"Error response: {error_text}")
+					print(f"Request URL: {url}")
+					print(f"Response status: {response.status}")
 					raise HTTPException(
 						status_code=response.status,
 						detail=f"Ошибка при выполнении запроса: {error_text}"
 					)
 				return await response.json()
 	except Exception as e:
-		print(f"Request error: {str(e)}")  # Отладочный вывод
+		print(f"Request error: {str(e)}")
 		raise HTTPException(
 			status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
 			detail=f"Ошибка при выполнении запроса: {str(e)}"
@@ -129,11 +128,11 @@ async def get_tickets(**kwargs) -> List[Ticket]:
 	while True:
 		params['page'] = page
 		url = f"{base_url}?{urllib.parse.urlencode(params)}"
-		print(f"Fetching tickets from URL: {url}")  # Отладочный вывод
+		print(f"Fetching tickets from URL: {url}")
 
 		try:
 			cases = await make_get_request(url)
-			print(f"Received response: {cases}")  # Отладочный вывод
+			print(f"Received response: {cases}")
 			
 			if not isinstance(cases, dict):
 				raise ValueError(f"Unexpected response format: {type(cases)}")
@@ -144,7 +143,7 @@ async def get_tickets(**kwargs) -> List[Ticket]:
 					continue
 					
 				if not isinstance(cases[c], dict) or 'case' not in cases[c]:
-					print(f"Skipping invalid case format: {cases[c]}")  # Отладочный вывод
+					print(f"Skipping invalid case format: {cases[c]}")
 					continue
 					
 				case = cases[c]["case"]
@@ -156,18 +155,18 @@ async def get_tickets(**kwargs) -> List[Ticket]:
 						group_id=case["group_id"],
 						user_id=case["user_id"],
 						staff_id=case["staff_id"],
-						rating=case.get("rating"),  # Используем .get() для опциональных полей
+						rating=case.get("rating"),
 						created_at=case["created_at"],
 						status=case['status'],
 					)
 					results.append(ticket)
 				except Exception as e:
-					print(f"Error creating ticket from case {case.get('case_id')}: {str(e)}")  # Отладочный вывод
+					print(f"Error creating ticket from case {case.get('case_id')}: {str(e)}")
 					continue
 
 			all_results.extend(results)
 			total_fetched += len(results)
-			print(f"Processed {len(results)} tickets on page {page}")  # Отладочный вывод
+			print(f"Processed {len(results)} tickets on page {page}")
 
 			if len(results) < 100 or (limit is not None and total_fetched >= limit):
 				break
@@ -175,7 +174,7 @@ async def get_tickets(**kwargs) -> List[Ticket]:
 				page += 1
 				
 		except Exception as e:
-			print(f"Error in get_tickets: {str(e)}")  # Отладочный вывод
+			print(f"Error in get_tickets: {str(e)}")
 			raise HTTPException(
 				status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
 				detail=f"Ошибка при получении обращений: {str(e)}"
