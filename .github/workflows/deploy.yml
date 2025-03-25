@@ -48,7 +48,16 @@ jobs:
           GOOGLE_CLIENT_X509_CERT_URL
         script: |
           cd /opt/omnidesk-analyzer
-          git pull origin main
+          
+          # Принудительно сбрасываем все локальные изменения
+          git reset --hard HEAD
+          git clean -fd
+          
+          # Получаем последние изменения
+          git fetch origin main
+          git reset --hard origin/main
+          
+          # Обновляем зависимости
           source venv/bin/activate
           pip install -r requirements.txt
           
@@ -74,8 +83,12 @@ jobs:
           chown omnidesk:omnidesk .env
           chmod 600 .env
           
+          # Перезапускаем сервис
           sudo systemctl restart omnidesk-analyzer
-          # Проверка статуса сервиса
+          
+          # Проверяем статус и логи
+          echo "Service status:"
           sudo systemctl status omnidesk-analyzer
-          # Проверка логов
+          
+          echo "Service logs:"
           sudo journalctl -u omnidesk-analyzer -n 50 
