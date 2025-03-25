@@ -19,7 +19,7 @@ import base64
 load_dotenv()
 
 # Отладочный вывод для проверки переменных окружения
-print("Checking environment variables:")
+print("Environment variables:")
 print(f"OMNIDESK_USERNAME: {'*' * len(os.getenv('OMNIDESK_USERNAME', ''))}")
 print(f"OMNIDESK_PASSWORD: {'*' * len(os.getenv('OMNIDESK_PASSWORD', ''))}")
 
@@ -85,20 +85,8 @@ async def make_get_request(url: str, **kwargs) -> dict:
 		HTTPException: Если запрос не удался
 	"""
 	try:
-		# Создаем заголовки для аутентификации
-		auth_string = f"{os.environ['OMNIDESK_USERNAME']}:{os.environ['OMNIDESK_PASSWORD']}"
-		auth_bytes = auth_string.encode('utf-8')
-		auth_b64 = base64.b64encode(auth_bytes).decode('utf-8')
-		
-		headers = {
-			'Authorization': f'Basic {auth_b64}',
-			'Content-Type': 'application/json'
-		}
-		
-		print(f"Using auth header: Basic {auth_b64[:10]}...")  # Отладочный вывод (показываем только начало)
-		
 		async with aiohttp.ClientSession() as session:
-			async with session.get(url, headers=headers) as response:
+			async with session.get(url, auth=AUTH) as response:
 				if response.status != 200:
 					error_text = await response.text()
 					print(f"Error response: {error_text}")  # Отладочный вывод
@@ -142,7 +130,7 @@ async def get_tickets(**kwargs) -> List[Ticket]:
 		print(f"Fetching tickets from URL: {url}")  # Отладочный вывод
 
 		try:
-			cases = await make_get_request(url, auth=AUTH)
+			cases = await make_get_request(url)
 			print(f"Received response: {cases}")  # Отладочный вывод
 			
 			if not isinstance(cases, dict):
@@ -209,7 +197,7 @@ async def get_messages(case_id: int) -> List[Message]:
 	url = f'https://profinansy.omnidesk.ru/api/cases/{case_id}/messages.json'
 
 	try:
-		response = await make_get_request(url, auth=AUTH)
+		response = await make_get_request(url)
 		data = response.json()
 		messages = []
 
@@ -304,7 +292,7 @@ async def get_staff_dict() -> Dict[int, str]:
 		HTTPException: Если не удалось получить данные сотрудников
 	"""
 	try:
-		response = await make_get_request('https://profinansy.omnidesk.ru/api/staff.json', auth=AUTH)
+		response = await make_get_request('https://profinansy.omnidesk.ru/api/staff.json')
 		staff_data = response.json()
 		return {
 			item["staff"]["staff_id"]: item["staff"]["staff_full_name"]
@@ -328,7 +316,7 @@ async def get_group_dict() -> Dict[int, str]:
 		HTTPException: Если не удалось получить данные групп
 	"""
 	try:
-		response = await make_get_request('https://profinansy.omnidesk.ru/api/groups.json', auth=AUTH)
+		response = await make_get_request('https://profinansy.omnidesk.ru/api/groups.json')
 		group_data = response.json()
 		return {
 			item["group"]["group_id"]: item["group"]["group_title"]
