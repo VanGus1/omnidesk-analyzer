@@ -7,7 +7,7 @@ logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 # Загрузка переменных окружения
-load_dotenv('/etc/systemd/system/omnidesk-analyzer.env')
+load_dotenv('/opt/omnidesk-analyzer/.env')
 
 # Отладочный вывод
 print("Environment variables:")
