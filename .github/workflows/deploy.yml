@@ -87,9 +87,28 @@ jobs:
           echo "Cloning repository..."
           sudo git clone https://github.com/VanGus1/omnidesk-analyzer.git /opt/omnidesk-analyzer
           
+          # Принудительно обновляем код
+          cd /opt/omnidesk-analyzer
+          echo "Fetching latest changes..."
+          sudo git fetch origin main
+          echo "Resetting to latest commit..."
+          sudo git reset --hard origin/main
+          
           # Проверяем склонированный код
           echo "New main.py content:"
           cat /opt/omnidesk-analyzer/main.py
+          
+          echo "main.py MD5 hash:"
+          md5sum /opt/omnidesk-analyzer/main.py
+          
+          echo "main.py first 10 lines:"
+          head -n 10 /opt/omnidesk-analyzer/main.py
+          
+          # Проверяем ветку и коммит
+          echo "Current branch:"
+          git branch
+          echo "Latest commit:"
+          git log -1
           
           # Восстанавливаем виртуальное окружение
           echo "Restoring venv..."
