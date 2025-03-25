@@ -49,19 +49,31 @@ jobs:
         script: |
           cd /opt/omnidesk-analyzer
           
-          # Принудительно сбрасываем все локальные изменения
-          git reset --hard HEAD
-          git clean -fd
+          # Проверяем права доступа
+          echo "Checking permissions..."
+          ls -la
           
-          # Получаем последние изменения
+          # Останавливаем сервис
+          echo "Stopping service..."
+          sudo systemctl stop omnidesk-analyzer
+          
+          # Принудительно сбрасываем все локальные изменения
+          echo "Resetting local changes..."
           git fetch origin main
           git reset --hard origin/main
+          git clean -fd
+          
+          # Проверяем статус git
+          echo "Git status:"
+          git status
           
           # Обновляем зависимости
+          echo "Updating dependencies..."
           source venv/bin/activate
           pip install -r requirements.txt
           
           # Создаем .env файл из секретов
+          echo "Creating .env file..."
           cat > .env << EOL
           OMNIDESK_USERNAME=${{ secrets.OMNIDESK_USERNAME }}
           OMNIDESK_PASSWORD=${{ secrets.OMNIDESK_PASSWORD }}
@@ -80,10 +92,16 @@ jobs:
           EOL
           
           # Устанавливаем правильные права доступа
-          chown omnidesk:omnidesk .env
-          chmod 600 .env
+          echo "Setting permissions..."
+          sudo chown -R omnidesk:omnidesk .
+          sudo chmod 600 .env
+          
+          # Проверяем содержимое utils.py
+          echo "Checking utils.py content:"
+          cat utils.py
           
           # Перезапускаем сервис
+          echo "Restarting service..."
           sudo systemctl restart omnidesk-analyzer
           
           # Проверяем статус и логи
