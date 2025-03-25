@@ -48,10 +48,6 @@ class AIRequest(BaseModel):
 	ticket: Ticket
 
 # Конфигурация из переменных окружения GitHub Actions
-AUTH = BasicAuth(
-    os.environ['OMNIDESK_USERNAME'],
-    os.environ['OMNIDESK_PASSWORD']
-)
 openai_key = os.environ['OPENAI_API_KEY']
 SCOPES = os.environ['GOOGLE_SCOPES'].split(',')
 
@@ -85,8 +81,14 @@ async def make_get_request(url: str, **kwargs) -> dict:
 		HTTPException: Если запрос не удался
 	"""
 	try:
+		# Создаем объект BasicAuth для каждого запроса
+		auth = BasicAuth(
+			login=os.environ['OMNIDESK_USERNAME'],
+			password=os.environ['OMNIDESK_PASSWORD']
+		)
+		
 		async with aiohttp.ClientSession() as session:
-			async with session.get(url, auth=AUTH) as response:
+			async with session.get(url, auth=auth) as response:
 				if response.status != 200:
 					error_text = await response.text()
 					print(f"Error response: {error_text}")  # Отладочный вывод
