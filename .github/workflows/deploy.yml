@@ -70,6 +70,30 @@ jobs:
           echo "Stopping service..."
           sudo systemctl stop omnidesk-analyzer
           
+          # Обновляем конфигурацию сервиса
+          echo "Updating service configuration..."
+          sudo tee /etc/systemd/system/omnidesk-analyzer.service << EOL
+          [Unit]
+          Description=OmniDesk Analyzer API
+          After=network.target
+
+          [Service]
+          User=omnidesk
+          Group=omnidesk
+          WorkingDirectory=/opt/omnidesk-analyzer
+          Environment=PYTHONPATH=/opt/omnidesk-analyzer
+          EnvironmentFile=/opt/omnidesk-analyzer/.env
+          ExecStart=/opt/omnidesk-analyzer/venv/bin/uvicorn main:app --host 0.0.0.0 --port 8000
+          Restart=always
+
+          [Install]
+          WantedBy=multi-user.target
+          EOL
+          
+          # Перезагружаем конфигурацию systemd
+          echo "Reloading systemd configuration..."
+          sudo systemctl daemon-reload
+          
           # Сохраняем текущий хэш коммита
           echo "Current commit hash:"
           git rev-parse HEAD
