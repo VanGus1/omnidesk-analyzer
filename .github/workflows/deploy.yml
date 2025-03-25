@@ -49,13 +49,30 @@ jobs:
         script: |
           cd /opt/omnidesk-analyzer
           
+          # Проверяем текущую конфигурацию git
+          echo "Current git configuration:"
+          git config --list
+          
+          # Проверяем текущий remote
+          echo "Current git remote:"
+          git remote -v
+          
+          # Проверяем текущую ветку и статус
+          echo "Current branch and status:"
+          git branch -a
+          git status
+          
           # Проверяем права доступа
-          echo "Checking permissions..."
+          echo "Current permissions:"
           ls -la
           
           # Останавливаем сервис
           echo "Stopping service..."
           sudo systemctl stop omnidesk-analyzer
+          
+          # Сохраняем текущий хэш коммита
+          echo "Current commit hash:"
+          git rev-parse HEAD
           
           # Принудительно сбрасываем все локальные изменения
           echo "Resetting local changes..."
@@ -63,8 +80,12 @@ jobs:
           git reset --hard origin/main
           git clean -fd
           
-          # Проверяем статус git
-          echo "Git status:"
+          # Проверяем новый хэш коммита
+          echo "New commit hash:"
+          git rev-parse HEAD
+          
+          # Проверяем статус git после обновления
+          echo "Git status after update:"
           git status
           
           # Обновляем зависимости
@@ -99,6 +120,10 @@ jobs:
           # Проверяем содержимое utils.py
           echo "Checking utils.py content:"
           cat utils.py
+          
+          # Проверяем права доступа после обновления
+          echo "Final permissions:"
+          ls -la
           
           # Перезапускаем сервис
           echo "Restarting service..."
