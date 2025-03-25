@@ -47,9 +47,21 @@ jobs:
           GOOGLE_AUTH_PROVIDER_X509_CERT_URL
           GOOGLE_CLIENT_X509_CERT_URL
         script: |
+          # Проверяем текущую директорию
+          echo "Current directory:"
+          pwd
+          
+          # Проверяем наличие директории
+          echo "Checking directory existence:"
+          ls -la /opt/omnidesk-analyzer
+          
           # Останавливаем сервис
           echo "Stopping service..."
           sudo systemctl stop omnidesk-analyzer
+          
+          # Проверяем текущий код
+          echo "Current main.py content:"
+          cat /opt/omnidesk-analyzer/main.py
           
           # Сохраняем .env файл
           echo "Backing up .env..."
@@ -67,9 +79,17 @@ jobs:
           echo "Removing old directory..."
           sudo rm -rf /opt/omnidesk-analyzer
           
+          # Проверяем, что директория удалена
+          echo "Checking directory after removal:"
+          ls -la /opt/omnidesk-analyzer || echo "Directory successfully removed"
+          
           # Клонируем репозиторий заново
           echo "Cloning repository..."
           sudo git clone https://github.com/VanGus1/omnidesk-analyzer.git /opt/omnidesk-analyzer
+          
+          # Проверяем склонированный код
+          echo "New main.py content:"
+          cat /opt/omnidesk-analyzer/main.py
           
           # Восстанавливаем виртуальное окружение
           echo "Restoring venv..."
